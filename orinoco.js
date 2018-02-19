@@ -9,6 +9,7 @@ var mysql_pwd = process.env.MYSQL_PASSWORD;
 // GLOBALS
 var cartArr = [];  // an array to hold order objects
 var itemCount = 0;
+var tempQty = 0;
 
 // create a connection database
 var connection = mysql.createConnection({
@@ -23,16 +24,16 @@ connection.connect(function(err) {
   if (err) throw err;
   // console.log("connected as id " + connection.threadId + "\n");
   // open welcome screen
-  selectDept();
+  selectDept(itemCount);
 });
 
-selectDept = function(){
+selectDept = function(count){
   // console.log('The Orinoco Customer functionality is under construction');
   // could get departments from the departments table but I wanted to practice a SELECT DISTINCT
   connection.query("SELECT DISTINCT department_name FROM products", function(err,res){
     // console.log(res);
     // display Orinoco 'logo'
-    displayLogo();
+    displayLogo(count);
     // get user input
     // begin with choosing a department to narrow items displayed
     inquirer
@@ -54,16 +55,16 @@ selectDept = function(){
     ])
     .then(function(selection){
       if(selection.dept === 'QUIT'){process.exit()};
-      selectItem(selection.dept);  
+      selectItem(selection.dept, count);  
     });
   });
 }
 
-function selectItem(dept){
+function selectItem(dept, count){
   console.log(dept);
   connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
     console.log(res);
-    displayLogo();
+    displayLogo(count);
     inquirer
     .prompt([
       {
@@ -85,7 +86,7 @@ function selectItem(dept){
     .then(function(selection){
       if(selection.item === '<--BACK TO DEPARTMENTS'){
         clearScreen();
-        selectDept();
+        selectDept(count);
       }
       else if(selection.item === 'QUIT') {process.exit()}
       else {
@@ -97,18 +98,20 @@ function selectItem(dept){
         var itemID = getItemID[0];
         // console.log('Item ID: '+itemID);
         // add to shopping cart here
-        addToCart(itemID, selection.item);
+        addToCart(itemID, selection.item, count);
       };
     });
   });
 }
 
-addToCart = function(input_id, item){
+
+addToCart = function(input_id, item, count){
   // console.log('in addToCart ID is: '+input);
   clearScreen();
-  displayLogo();
+  displayLogo(count);
+  // console.log(input_id);
   console.log(item);
-  // get quantity
+  // GET QTY
   inquirer
   .prompt([
     {
@@ -127,10 +130,12 @@ addToCart = function(input_id, item){
     }
   ])
   .then(function(answer){
+    tempQty = parseInt(answer.qty);
     // find item in products table
     connection.query("SELECT * FROM products WHERE item_id = ?", input_id, function(err,res){
       if (err) throw err;
       // check availability
+      // console.log(res);
       if (res[0].stock_quantity < answer.qty){
         var qtyMsg = 'The available quantity is '+ res[0].stock_quantity + '. Revise quantity?';
         inquirer
@@ -142,14 +147,16 @@ addToCart = function(input_id, item){
             choices: [
               'change to available quantity',
               'new quantity',
-              'return to item selection'
+              'BACK'
             ]
           }
         ])
         .then(function(revision){
+          // revise order qty = stock on hand qty
           if(revision.reviseQty === 'change to available quantity'){
-            console.log('Quantity changed to available quantity');
-            itemCount += res[0].stock_quantity;
+            // console.log('Quantity changed to available quantity');
+            tempQty = res[0].stock_quantity;
+            itemCount += tempQty;
           }
           else if(revision.reviseQty === 'new quantity'){
             inquirer
@@ -157,7 +164,7 @@ addToCart = function(input_id, item){
               {
                 name: 'newQty',
                 type: 'input',
-                message: 'Enter new quantity?',
+                message: 'Enter new quantity',
                 validate: function(value) {
                   var pass = value.match(
                     /^\d\d?$/
@@ -174,28 +181,68 @@ addToCart = function(input_id, item){
               }
             ])
             .then(function(revised){
-              console.log('revised qty is '+revised.newQty);
-              itemCount += revised.newQty;
+              // console.log('revised qty is '+revised.newQty);
+              tempQty = revised.newQty;
+              itemCount += tempQty;
             });
-          }
+          }  // END OF REVISE ORDER QTY = NEW QTY
           else{
+            // BACK
             // return to selection of items in chosen department
             selectItem(res[0].department_name);
           }
-        });
-      }
+        });  // END REVISE ORDER QTY
+      }  // END IF ORDER QTY > STOCK ON HAND
       else {
         // use entered quantity
-        console.log('quantity is '+answer.qty);
-        itemCount += answer.qty;
+        // console.log('quantity is '+answer.qty);
+        itemCount += tempQty;
+        // console.log('itemcount is '+itemCount);
       }
+      clearScreen();
+      displayLogo(itemCount);
+      console.log('itemcount is '+itemCount);
+      // what's next?
+      // continue shopping, checkout or quit?
+      inquirer
+      .prompt([
+        {
+          type: 'list',
+          name: 'next',
+          message: 'Do you want to ...',
+          choices: [
+            'continue shopping?',
+            'checkout?',
+            'QUIT'
+          ]
+        }
+      ])
+      .then(function(whats){
+        switch(whats.next){
+          case 'continue shopping?':
+            selectDept(itemCount);
+            return;
+          case 'checkout?':
+            checkout(itemCount);
+            return;
+          case 'QUIT':
+            process.exit();
+        }
+      });  // END WHAT'S NEXT 
     // cartArr.push(selection.qty + " * " + selection.item.product_name + "  $"+selection.item.price);
-    });
-  });  
+    }); // END DATABASE QUERY
+  }); // END GET QTY 
 }
 
 
-displayLogo = function(){
+checkout = function(count){
+  clearScreen();
+  displayLogo(count);
+  console.log('check back for checkout functionality');
+}
+
+
+displayLogo = function(itemCnt){
   const topleft = cliBoxes.double.topLeft;
   const topright = cliBoxes.double.topRight;
   const bottomleft = cliBoxes.double.bottomLeft;
@@ -211,18 +258,18 @@ displayLogo = function(){
   const BorderTop = topleft+horizontal+topright;
   const BorderBottom = bottomleft+horizontal+bottomright;
   const BorderSides = side+pd+side;
-  const company = 'ORINOCO';
-  const slogan  = '    A slightly smaller online store    '; 
-  const companyLine = side.green+'                 '+company.bold.yellow+'                 '+side.green;
+  const company = 'ORINOCO.COM';
+  const slogan  = '   (A slightly smaller online store)   '; 
+  const companyLine = side.green+'               '+company.bold.yellow+'               '+side.green;
   const sloganLine = side.green+" "+slogan.yellow+" "+side.green;
   var cartLine='';
-  var cartMsg = itemCount + " items in your cart"
-  if (itemCount > 9){
+  var cartMsg = itemCnt + " items in your cart"
+  if (itemCnt > 9){
     cartLine = side.green + '          ' + cartMsg.red + '          ' + side.green;
   }
   else{
     cartLine = side.green + '           ' + cartMsg.red + '          ' + side.green;
-  };
+  }
   clearScreen();
   console.log(BorderTop.green);
   console.log(BorderSides.green);
@@ -230,7 +277,7 @@ displayLogo = function(){
   // console.log(BorderSides.green);
   console.log(sloganLine);
   console.log(BorderSides.green);
-  if(cartArr.length>0){
+  if(itemCnt>0){
     console.log(cartLine.green);
   }
   else{
