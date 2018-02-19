@@ -134,8 +134,8 @@ addToCart = function(input_id, item, count){
     // find item in products table
     connection.query("SELECT * FROM products WHERE item_id = ?", input_id, function(err,res){
       if (err) throw err;
-      // check availability
       // console.log(res);
+      // check availability
       if (res[0].stock_quantity < answer.qty){
         var qtyMsg = 'The available quantity is '+ res[0].stock_quantity + '. Revise quantity?';
         inquirer
@@ -199,6 +199,14 @@ addToCart = function(input_id, item, count){
         itemCount += tempQty;
         // console.log('itemcount is '+itemCount);
       }
+      var lineItem = {
+        id: res[0].item_id,
+        item: res[0].product_name,
+        price: res[0].price,
+        quantity: tempQty,
+        extAmt: res[0].price * tempQty
+      };
+      cartArr.push(lineItem);
       clearScreen();
       displayLogo(itemCount);
       console.log('itemcount is '+itemCount);
@@ -236,9 +244,59 @@ addToCart = function(input_id, item, count){
 
 
 checkout = function(count){
+  var total=0;
   clearScreen();
   displayLogo(count);
-  console.log('check back for checkout functionality');
+  // console.log('check back for checkout functionality');
+  console.log('Items in your cart:');
+  for(i=0; i<cartArr.length; i++){
+    console.log(cartArr[i].quantity + ' ' + cartArr[i].item + ' ($' + cartArr[i].price + ') $' + cartArr[i].extAmt);
+    total+=cartArr[i].extAmt;
+  }
+  console.log('Total Order Amount: ' + total);
+  console.log('\n');
+  inquirer
+  .prompt([
+    {
+      type: 'list',
+      name: 'action',
+      message: 'Place this order?',
+      choices: [
+        'Place Order',
+        'Cancel'
+      ]
+    }
+  ])
+  .then(function(answer){
+    if(answer.action==='Cancel'){
+      selectDept();      
+    }
+    else{
+      for(i=0; i<cartArr.length; i++){
+        productsUpdate(cartArr[i].id, cartArr[i].qty);
+      }
+    }
+  });
+}
+
+
+function productsUpdate(id, qty){
+  var query = connection.query(
+    'UPDATE products SET ? WHERE ?',
+    [
+      {
+        stock_quantity: -qty
+      },
+      {
+        item_id: id
+      }      
+    ],
+    function(err,res){
+      if(err) throw err;      
+      // console.log(res);
+    }
+  );
+
 }
 
 
