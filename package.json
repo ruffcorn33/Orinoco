@@ -1,0 +1,26 @@
+{
+  "name": "orinoco",
+  "version": "1.0.0",
+  "description": "A simple Amazon.com-like store",
+  "main": "orinoco.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruffcorn33/Orinoco.git"
+  },
+  "author": "Craig Christensen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ruffcorn33/Orinoco/issues"
+  },
+  "homepage": "https://github.com/ruffcorn33/Orinoco#readme",
+  "dependencies": {
+    "cli-boxes": "^1.0.0",
+    "colors": "^1.1.2",
+    "dotenv": "^5.0.0",
+    "inquirer": "^5.1.0",
+    "mysql": "^2.15.0"
+  }
+}
