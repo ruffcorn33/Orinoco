@@ -22,18 +22,16 @@ var connection = mysql.createConnection({
 // and connect
 connection.connect(function(err) {
   if (err) throw err;
-  // console.log("connected as id " + connection.threadId + "\n");
   // open welcome screen
   selectDept(itemCount);
 });
 
 selectDept = function(count){
-  // console.log('The Orinoco Customer functionality is under construction');
   // could get departments from the departments table but I wanted to practice a SELECT DISTINCT
   connection.query("SELECT DISTINCT department_name FROM products", function(err,res){
-    // console.log(res);
     // display Orinoco 'logo'
     displayLogo(count);
+    // count is -1 when returning from a placed order
     if (count === -1){count=0};
     // get user input
     // begin with choosing a department to narrow items displayed
@@ -92,12 +90,9 @@ function selectItem(dept, count){
       else if(selection.item === 'QUIT') {process.exit()}
       else {
         clearScreen();
-        // console.log('Selection is: '+selection.item);
-        // get item id
-        var getItemID = selection.item.split(" ")
-        // console.log(getItemID);
+        // get item id 
+        var getItemID = selection.item.split(" ");
         var itemID = getItemID[0];
-        // console.log('Item ID: '+itemID);
         // add to shopping cart here
         addToCart(itemID, selection.item, count);
       };
@@ -107,10 +102,8 @@ function selectItem(dept, count){
 
 
 addToCart = function(input_id, item, count){
-  // console.log('in addToCart ID is: '+input);
   clearScreen();
   displayLogo(count);
-  // console.log(input_id);
   console.log(item);
   // GET QTY
   inquirer
@@ -135,7 +128,6 @@ addToCart = function(input_id, item, count){
     // find item in products table
     connection.query("SELECT * FROM products WHERE item_id = ?", input_id, function(err,res){
       if (err) throw err;
-      // console.log(res);
       // check availability
       if (res[0].stock_quantity < answer.qty){
         var qtyMsg = 'The available quantity is '+ res[0].stock_quantity + '. Revise quantity?';
@@ -155,7 +147,6 @@ addToCart = function(input_id, item, count){
         .then(function(revision){
           // revise order qty = stock on hand qty
           if(revision.reviseQty === 'change to available quantity'){
-            // console.log('Quantity changed to available quantity');
             tempQty = res[0].stock_quantity;
             itemCount += tempQty;
           }
@@ -172,17 +163,16 @@ addToCart = function(input_id, item, count){
                   );
                   if(pass) {
                     if(value <= res[0].stock_quantity ){
-                      if(value != 0){
+                      if(value > 0){
                         return true;
                       }
+                      return 'Please enter a number between 1-'.red + res[0].stock_quantity;
                     }
                   }   
-                  return 'Please enter a number between 1-'.red + res[0].stock_quantity;
                 }
               }
             ])
             .then(function(revised){
-              // console.log('revised qty is '+revised.newQty);
               tempQty = revised.newQty;
               itemCount += tempQty;
             });
@@ -196,10 +186,9 @@ addToCart = function(input_id, item, count){
       }  // END IF ORDER QTY > STOCK ON HAND
       else {
         // use entered quantity
-        // console.log('quantity is '+answer.qty);
         itemCount += tempQty;
-        // console.log('itemcount is '+itemCount);
       }
+      // add a constructor in a second .js file?
       var lineItem = {
         id: res[0].item_id,
         item: res[0].product_name,
@@ -210,7 +199,6 @@ addToCart = function(input_id, item, count){
       cartArr.push(lineItem);
       clearScreen();
       displayLogo(itemCount);
-      console.log('itemcount is '+itemCount);
       // what's next?
       // continue shopping, checkout or quit?
       inquirer
@@ -237,25 +225,23 @@ addToCart = function(input_id, item, count){
           case 'QUIT':
             process.exit();
         }
-      });  // END WHAT'S NEXT 
-    // cartArr.push(selection.qty + " * " + selection.item.product_name + "  $"+selection.item.price);
+      }); // END WHAT'S NEXT 
     }); // END DATABASE QUERY
   }); // END GET QTY 
-}
+}   // END ADD TO CART
 
 
 checkout = function(count){
   var total=0;
   clearScreen();
   displayLogo(count);
-  // console.log('check back for checkout functionality');
+  // look into formatting this better
   console.log('Items in your cart:');
   for(i=0; i<cartArr.length; i++){
     console.log(cartArr[i].quantity + ' ' + cartArr[i].item + ' ($' + cartArr[i].price + ') $' + cartArr[i].extAmt);
     total+=cartArr[i].extAmt;
   }
   console.log('Total Order Amount: ' + total);
-  // console.log('\n');
   inquirer
   .prompt([
     {
@@ -270,7 +256,7 @@ checkout = function(count){
   ])
   .then(function(answer){
     if(answer.action==='Cancel'){
-      selectDept();      
+      selectDept(0);      
     }
     else{
       for(i=0; i<cartArr.length; i++){
@@ -278,19 +264,15 @@ checkout = function(count){
       }
     }
   });
-}
+} // END OF CHECKOUT
 
 
 function productsUpdate(id, qty, extAmt){
-  // console.log('id: '+ id + ', qty: ' + qty, 'Extended Amount: ' + extAmt);
   var query = connection.query(
     'UPDATE products SET stock_quantity = (stock_quantity - ?), product_sales = (product_sales + ?) WHERE item_id = ?',
     [qty, extAmt, id],
     function(err,res){
       if(err) throw err;      
-      // console.log(res);
-      // console.log('Thank you for your order!');
-      // process.exit();
       cartArr = [];
       itemCount = 0;
       tempQty = 0;
@@ -348,7 +330,6 @@ displayLogo = function(itemCnt){
   }
   console.log(BorderBottom.green);
 }
-itemCnt = 0;
 
 function clearScreen(){
   // clear output from this application/prevent scrolling
