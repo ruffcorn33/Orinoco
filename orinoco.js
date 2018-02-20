@@ -34,6 +34,7 @@ selectDept = function(count){
     // console.log(res);
     // display Orinoco 'logo'
     displayLogo(count);
+    if (count === -1){count=0};
     // get user input
     // begin with choosing a department to narrow items displayed
     inquirer
@@ -254,7 +255,7 @@ checkout = function(count){
     total+=cartArr[i].extAmt;
   }
   console.log('Total Order Amount: ' + total);
-  console.log('\n');
+  // console.log('\n');
   inquirer
   .prompt([
     {
@@ -273,30 +274,30 @@ checkout = function(count){
     }
     else{
       for(i=0; i<cartArr.length; i++){
-        productsUpdate(cartArr[i].id, cartArr[i].qty);
+        productsUpdate(cartArr[i].id, cartArr[i].quantity, cartArr[i].extAmt);
       }
     }
   });
 }
 
 
-function productsUpdate(id, qty){
+function productsUpdate(id, qty, extAmt){
+  // console.log('id: '+ id + ', qty: ' + qty, 'Extended Amount: ' + extAmt);
   var query = connection.query(
-    'UPDATE products SET ? WHERE ?',
-    [
-      {
-        stock_quantity: -qty
-      },
-      {
-        item_id: id
-      }      
-    ],
+    'UPDATE products SET stock_quantity = (stock_quantity - ?), product_sales = (product_sales + ?) WHERE item_id = ?',
+    [qty, extAmt, id],
     function(err,res){
       if(err) throw err;      
       // console.log(res);
+      // console.log('Thank you for your order!');
+      // process.exit();
+      cartArr = [];
+      itemCount = 0;
+      tempQty = 0;
+      clearScreen();
+      selectDept(-1);
     }
   );
-
 }
 
 
@@ -328,6 +329,7 @@ displayLogo = function(itemCnt){
   else{
     cartLine = side.green + '           ' + cartMsg.red + '          ' + side.green;
   }
+  var thanksLine = side.green + "        Thank-you for your order!        ".cyan + side.green;
   clearScreen();
   console.log(BorderTop.green);
   console.log(BorderSides.green);
@@ -336,13 +338,17 @@ displayLogo = function(itemCnt){
   console.log(sloganLine);
   console.log(BorderSides.green);
   if(itemCnt>0){
-    console.log(cartLine.green);
+    console.log(cartLine);
   }
-  else{
+  else if(itemCnt === -1){
+    console.log(thanksLine);
+  }
+  else {
     console.log(BorderSides.green);
   }
   console.log(BorderBottom.green);
 }
+itemCnt = 0;
 
 function clearScreen(){
   // clear output from this application/prevent scrolling
