@@ -89,10 +89,10 @@ selectDept = function(operation, target){
 
       switch(target){
         case 'Products':
-          getInventory(selection.dept, 'view');
+          queryInventory(selection.dept, 'view');
           break;
         case 'Low':
-          getInventory(selection.dept, 'low');
+          queryInventory(selection.dept, 'low');
          break;
         case 'Inventory':
           addInventory();
@@ -108,13 +108,12 @@ selectDept = function(operation, target){
   });
 }
 
-function getInventory(dept, operation){
-  var response = queryItems(dept, operation);
-  // console.log('reponse returned by queryItems is: '+response)
-  // displayItems(response, operation);  
-}
-
 function addInventory(dept){
+  // use the appropriate select query to populate in inquirer prompt with items
+  // choosing an item will bring up a new menu requesting a quantity to order
+  // this will trigger an SQL UPDATE that will add that quantity to the irem
+  // stock_quantity
+  
   if(dept === 'ALL'){
     connection.query("SELECT * FROM products", function(err,res){
       if (err) throw err;
@@ -171,9 +170,6 @@ function addInventory(dept){
     }
   );
 
-
-
-
 }
 
 function addNewProd(){
@@ -182,43 +178,35 @@ function addNewProd(){
   // then does an insert into the products table
 }
 
-function queryItems(dept, operation){
-  var queryResponse;
+function queryInventory(dept, operation){
   if(operation === 'view'){
     if(dept === 'ALL'){
-      console.log('SELECT * FROM products')
       connection.query("SELECT * FROM products", function(err,res){
         if (err) throw err;
         displayItems(res, operation);  
-        // console.log('Response from select all is: ' + JSON.stringify(res));
-        // return res;
-        // console.log('queryResonse is: '+queryResponse)
       });
     } 
     else{
       connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
         if (err) throw err;
         displayItems(res, operation); 
-        // queryResponse = res;
       });
     }
   }
-  // else if(operation === 'low'){
-  //   if(dept === 'ALL'){
-  //     connection.query("SELECT * FROM products WHERE stock_quantity <= 5", function(err,res){
-  //       if (err) throw err;
-  //       queryResponse = res;
-  //     });
-  //   } 
-  //   else{
-  //     connection.query("SELECT * FROM products WHERE stock_quantity <= 5 AND department_name = ?", dept, function(err,res){
-  //       if (err) throw err;
-  //       queryResponse = res;
-  //     });
-  //   }
-  // }
-  // console.log('reponse in queryItems is: '+res)
-  // return res;
+  else if(operation === 'low'){
+    if(dept === 'ALL'){
+      connection.query("SELECT * FROM products WHERE stock_quantity <= 5", function(err,res){
+        if (err) throw err;
+        displayItems(res, operation); 
+      });
+    } 
+    else{
+      connection.query("SELECT * FROM products WHERE stock_quantity <= 5 AND department_name = ?", dept, function(err,res){
+        if (err) throw err;
+        displayItems(res, operation); 
+      });
+    }
+  }
 }
 
 function displayItems(res, operation){
@@ -263,41 +251,7 @@ function displayItems(res, operation){
   pause();
 }
 
-
-// function selectItems(res, operation){
-//   displayLogo(operation);
-//   inquirer
-//   .prompt([
-//     {
-//       name:'item',
-//       type: 'list',
-//       choices: function(){
-//         var itemArr = ['<--BACK TO DEPARTMENTS'];
-//         var item;
-//         for (i=0; i<res.length; i++){
-//           item = res[i].item_id + " " + res[i].product_name + " $" + res[i].price + res[i].stock_quantity;
-//           itemArr.push(item);
-//         }
-//         itemArr.push('QUIT'.red);
-//         return itemArr;
-//       },
-//       message: 'Select an item to add inventory\n'.red
-//     }
-//   ])
-//   .then(function(selection){
-//     if(selection.item === '<--BACK TO DEPARTMENTS'){
-//       clearScreen();
-//       selectDept();
-//     }
-//     else if(selection.item === 'QUIT') {process.exit()}
-//     else {
-//       // go to addInventory
-//     }
-//   });
-// }
-
 displayLogo = function(operation){
-  // console.log('OPERATION IS: ' + operation);
   const topleft = cliBoxes.double.topLeft;
   const topright = cliBoxes.double.topRight;
   const bottomleft = cliBoxes.double.bottomLeft;
