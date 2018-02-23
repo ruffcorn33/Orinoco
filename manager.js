@@ -113,6 +113,7 @@ function addInventory(dept){
   // choosing an item will bring up a new menu requesting a quantity to order
   // this will trigger an SQL UPDATE that will add that quantity to the irem
   // stock_quantity
+  //
   
   if(dept === 'ALL'){
     connection.query("SELECT * FROM products", function(err,res){
