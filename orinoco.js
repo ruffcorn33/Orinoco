@@ -59,7 +59,8 @@ selectDept = function(count){
   });
 }
 
-function selectItem(dept, count){
+
+selectItem = function(dept, count){
   console.log(dept);
   connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
     console.log(res);

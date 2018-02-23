@@ -95,10 +95,10 @@ selectDept = function(operation, target){
           queryInventory(selection.dept, 'low');
          break;
         case 'Inventory':
-          addInventory();
+          addInventory(selection.dept);
           break;
         case 'New':
-          addNewProd();
+          addNewProd(selection.dept);
           break;
         default:
           console.log('unknown input');
@@ -109,67 +109,21 @@ selectDept = function(operation, target){
 }
 
 function addInventory(dept){
-  // use the appropriate select query to populate in inquirer prompt with items
-  // choosing an item will bring up a new menu requesting a quantity to order
-  // this will trigger an SQL UPDATE that will add that quantity to the irem
-  // stock_quantity
+  // use the appropriate select query
+  // send response to stockItems
   
   if(dept === 'ALL'){
-    connection.query("SELECT * FROM products", function(err,res){
+    connection.query("SELECT * FROM products", function(err,res){;
       if (err) throw err;
-      // displayItems(res, 'view');
+      stockItems(res);
     });
   } 
   else{
     connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
       if (err) throw err;
-      // displayItems(res, 'view');
+      stockItems(res);
     });
   }
-  inquirer
-  .prompt([
-    {
-      name:'item',
-      type: 'list',
-      choices: function(){
-        var itemArr = ['MAIN MENU'];
-        var item;
-        for (i=0; i<res.length; i++){
-          item = res[i].item_id + " " + res[i].product_name + " $" + res[i].stock_quantity;
-          itemArr.push(item);
-        }
-        itemArr.push('QUIT'.red);
-        return itemArr;
-      },
-      message: 'Select the item you want to resupply\n'.red
-    }
-  ])
-  .then(function(selection){
-    if(selection.item === 'MAIN MENU'){
-      mainMenu();
-    }
-    else if(selection.item === 'QUIT') {process.exit()}
-    else {
-      // get item id 
-      var getItemID = selection.item.split(" ");
-      var itemID = getItemID[0];
-      // add to shopping cart here
-      addToCart(itemID, selection.item, count);
-    };
-  });
-
-  var query = connection.query(
-    'UPDATE products SET stock_quantity = (stock_quantity - ?), product_sales = (product_sales + ?) WHERE item_id = ?',
-    [qty, extAmt, id],
-    function(err,res){
-      if(err) throw err;      
-      cartArr = [];
-      itemCount = 0;
-      tempQty = 0;
-      selectDept(-1);
-    }
-  );
-
 }
 
 function addNewProd(){
@@ -249,6 +203,69 @@ function displayItems(res, operation){
   console.log('\n');
   // pause before returning to main menu
   pause();
+}
+
+function stockItems(res){
+  // populate inquirer prompt with items
+  // choosing an item will bring up a new menu requesting a quantity to order
+  // this will trigger an SQL UPDATE that will add that quantity to the item
+  // stock_quantity
+
+  inquirer
+  .prompt([
+    {
+      name:'item',
+      type: 'list',
+      choices: function(){
+        var itemArr = ['MAIN MENU'];
+        var item;
+        for (i=0; i<res.length; i++){
+          item = res[i].item_id + " " + res[i].product_name + res[i].stock_quantity;
+          itemArr.push(item);
+        }
+        itemArr.push('QUIT'.red);
+        return itemArr;
+      },
+      message: 'Select the item you want to resupply\n'.red
+    }
+  ])
+  .then(function(selection){
+    if(selection.item === 'MAIN MENU'){
+      mainMenu();
+    }
+    else if(selection.item === 'QUIT') {process.exit()}
+    else {
+      // get item id 
+      var getItemID = selection.item.split(" ");
+      var itemID = getItemID[0];
+      inquirer
+      .prompt([
+        {
+          type: 'input',
+          name: 'qty',
+          message: 'Quantity to reorder?',
+          validate: function(value) {
+            var pass = value.match(
+              /^\d\d?$/
+            );
+            if (pass) {
+              return true;
+            }   
+            return 'Please enter a number between 1-99'.red;
+          }
+        }
+      ])
+      .then(function(answer){
+        // UPDATE product record by adding to stock quantity
+        var query = connection.query(
+          'UPDATE products SET stock_quantity = (stock_quantity + ?) WHERE item_id = ?',
+          [answer.qty, itemID]
+        );
+        console.log('Stock order placed');
+        pause();
+      });
+    };
+  });
 }
 
 displayLogo = function(operation){
