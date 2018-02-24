@@ -7,9 +7,6 @@ const columnify = require('columnify')
 require("dotenv").config();
 var mysql_pwd = process.env.MYSQL_PASSWORD;
 
-// GLOBALS
-
-
 // create a connection database
 var connection = mysql.createConnection({
   host: "localhost",
@@ -108,31 +105,7 @@ selectDept = function(operation, target){
   });
 }
 
-function addInventory(dept){
-  // use the appropriate select query
-  // send response to stockItems
-  
-  if(dept === 'ALL'){
-    connection.query("SELECT * FROM products", function(err,res){;
-      if (err) throw err;
-      stockItems(res);
-    });
-  } 
-  else{
-    connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
-      if (err) throw err;
-      stockItems(res);
-    });
-  }
-}
-
-function addNewProd(){
-  console.log('add new product functionality is under construction');
-  // need to add a menu that asks for product_name --> department_name --> price --> stock_quantity
-  // then does an insert into the products table
-}
-
-function queryInventory(dept, operation){
+queryInventory = function(dept, operation){
   if(operation === 'view'){
     if(dept === 'ALL'){
       connection.query("SELECT * FROM products", function(err,res){
@@ -163,7 +136,7 @@ function queryInventory(dept, operation){
   }
 }
 
-function displayItems(res, operation){
+displayItems = function(res, operation){
   displayLogo(operation);
   var productsArr = [];
   // ItemObj constructor.  move to its own js file?
@@ -205,12 +178,30 @@ function displayItems(res, operation){
   pause();
 }
 
-function stockItems(res){
+addInventory = function(dept){
+  // use the appropriate select query
+  // send response to stockItems
+  
+  if(dept === 'ALL'){
+    connection.query("SELECT * FROM products", function(err,res){;
+      if (err) throw err;
+      stockItems(res);
+    });
+  } 
+  else{
+    connection.query("SELECT * FROM products WHERE department_name = ?", dept, function(err,res){
+      if (err) throw err;
+      stockItems(res);
+    });
+  }
+}
+
+stockItems = function(res){
   // populate inquirer prompt with items
   // choosing an item will bring up a new menu requesting a quantity to order
   // this will trigger an SQL UPDATE that will add that quantity to the item
   // stock_quantity
-
+  
   inquirer
   .prompt([
     {
@@ -220,7 +211,7 @@ function stockItems(res){
         var itemArr = ['MAIN MENU'];
         var item;
         for (i=0; i<res.length; i++){
-          item = res[i].item_id + " " + res[i].product_name + res[i].stock_quantity;
+          item = res[i].item_id + " " + res[i].product_name + ', quantity:' + res[i].stock_quantity;
           itemArr.push(item);
         }
         itemArr.push('QUIT'.red);
@@ -266,6 +257,14 @@ function stockItems(res){
       });
     };
   });
+}
+
+addNewProd = function(){
+  console.log('add new product functionality is under construction');
+  // need to add a menu that asks for product_name --> department_name --> price --> stock_quantity
+  // department should be a list select from query to departments table
+  // then does an insert into the products table
+
 }
 
 displayLogo = function(operation){
@@ -320,12 +319,12 @@ displayLogo = function(operation){
   console.log(BorderBottom.green);
 }
 
-function clearScreen(){
+clearScreen = function(){
   // clear output from this application/prevent scrolling
   process.stdout.write('\033c'); 
 }
 
-function pause(){
+pause = function(){
   inquirer
   .prompt([
     {
