@@ -67,5 +67,35 @@ After
 
 ## Behind the Scenes
 
-This app interacts with a MySQL database called orinoco_DB.  A schema file is included for creating the database and two tables: products and departments.  
+This app interacts with a MySQL database called orinoco_DB.  A schema file is included for creating the database and two tables: products and departments.  There are two insert commands that will populate the tables with 70+ products and 4 departments.
 
+The app requires the nmp module [mysql].(https://www.npmjs.com/package/mysql) to handle the database queries.  
+
+The user's MySQL password in kept protected in a .env file which is in turn handled by the npm module [dotenv].().  The user should add a file named .env and it add a line 'MYSQL_PASSWORD=********' where ******** is the user's password.
+
+The app also uses these modules to format the user interface:
+
+[cli-Boxes].(https://www.npmjs.com/package/cli-boxes) - for border boxes
+
+[colors].(https://www.npmjs.com/package/colors) - for colored output
+
+[inquirer].(https://www.npmjs.com/package/inquirer) - for all menus
+
+[columnify].(https://www.npmjs.com/package/columnify) - to format listings in the manager app.
+
+## Install 
+
+* Clone this repository
+* run nmp install from the command line
+* add a file named .env.
+  * add a line to .env, 'MYSQL_PASSWORD=********' 
+  * where ******** is the user's password.
+* run contents of schema.sql in MySQL to create the database and data
+* Have fun shopping.
+
+## To Do
+* Complete the Add New Product functionality
+
+## The Orinoco
+
+**The Orinoco River**, like the Amazon, is one of the longest rivers in South America.  It's drainage basin is nearly 900,000 square kilometers.  Not as big and the Amazon, but pretty big!  The Orinoco drains rainwater from Venezuela and Columbia to the Atlantic ocean. 
