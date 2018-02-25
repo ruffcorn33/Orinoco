@@ -100,4 +100,5 @@ insert into departments (department_name, department_costs)
 values 
 ("Books", 5000.00),
 ("Computers", 6000.00),
-("Electronics",9000.00);
+("Electronics",9000.00),
+("Kitchen",7000.00);

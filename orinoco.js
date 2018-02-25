@@ -4,9 +4,9 @@ require("dotenv").config();
 const mysql = require('mysql');
 const colors = require('colors');
 const cliBoxes = require('cli-boxes');
-var mysql_pwd = process.env.MYSQL_PASSWORD;
 
 // GLOBALS
+const mysql_pwd = process.env.MYSQL_PASSWORD;
 var cartArr = [];  // an array to hold order objects
 var itemCount = 0;
 var tempQty = 0;
@@ -242,7 +242,7 @@ checkout = function(count){
     console.log(cartArr[i].quantity + ' ' + cartArr[i].item + ' ($' + cartArr[i].price + ') $' + cartArr[i].extAmt);
     total+=cartArr[i].extAmt;
   }
-  console.log('Total Order Amount: ' + total);
+  console.log('Total Order Amount: $' + parseFloat(total).toFixed(2));
   inquirer
   .prompt([
     {
